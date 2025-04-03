@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import logging
 import random
+import requests
 
 app = Flask(__name__)
 
@@ -170,6 +171,37 @@ def get_first_name(req):
             # Если есть сущность с ключом 'first_name', то возвращаем её значение.
             # Во всех остальных случаях возвращаем None.
             return entity['value'].get('first_name', None)
+
+
+def get_coordinates(city_name):
+    try:
+        # url, по которому доступно API Яндекс.Карт
+        url = "https://geocode-maps.yandex.ru/1.x/"
+        # параметры запроса
+        params = {
+            "apikey": "8013b162-6b42-4997-9691-77b7074026e0",
+            # город, координаты которого мы ищем
+            'geocode': city_name,
+            # формат ответа от сервера, в данном случае JSON
+            'format': 'json'
+        }
+        # отправляем запрос
+        response = requests.get(url, params)
+        # получаем JSON ответа
+        json = response.json()
+        # получаем координаты города
+        # (там написаны долгота(longitude), широта(latitude) через пробел)
+        # посмотреть подробное описание JSON-ответа можно
+        # в документации по адресу https://tech.yandex.ru/maps/geocoder/
+        coordinates_str = json['response']['GeoObjectCollection'][
+            'featureMember'][0]['GeoObject']['Point']['pos']
+        # Превращаем string в список, так как
+        # точка - это пара двух чисел - координат
+        long, lat = map(float, coordinates_str.split())
+        # Вернем ответ
+        return long, lat
+    except Exception as e:
+        return e
 
 
 if __name__ == '__main__':
